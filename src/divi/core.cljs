@@ -42,39 +42,65 @@
 
 (defn multiplikationstabell [app-state]
   (let [state @app-state]
-    [:table
-     [:tbody
-      (concat (map (fn [r]
-                     [:tr {:key (str "*" r)}
-                      (cons
-                       [:td.column {:key (str r)}
-                        r]
-                       (map (fn [c]
-                              [:td.cell {:key (str c "*" r)}
-                               [:input {:type :text
-                                        :size "2"
-                                        :on-change (mata-in app-state [c r])
-                                        :value (cell-value-for state [c r])}]])
-                            (range 1 11)))])
-                   (range 10 0 -1))
-              [[:tr {:key "*0"}
-                (cons
-                 [:td.origo {:key "origo"} 0]
-                 (map (fn [c]
-                        [:td.bottom-row {:key (str c "*")} c])
-                      (range 1 11)))] ])]]))
+    [:div
+     [:h4 "Multiplikation"]
+     [:table
+      [:tbody
+       (concat (map (fn [r]
+                      [:tr {:key (str "*" r)}
+                       (cons
+                        [:td.column {:key (str r)}
+                         r]
+                        (map (fn [c]
+                               [:td.cell {:key (str c "*" r)}
+                                [:input {:type :text
+                                         :size "2"
+                                         :on-change (mata-in app-state [c r])
+                                         :value (cell-value-for state [c r])}]])
+                             (range 1 11)))])
+                    (range 10 0 -1))
+               [[:tr {:key "*0"}
+                 (cons
+                  [:td.origo {:key "origo"} 0]
+                  (map (fn [c]
+                         [:td.bottom-row {:key (str c "*")} c])
+                       (range 1 11)))] ])]]]))
+
+(defn division [app-state]
+  (let [summa 123.3
+        divisor 3
+        resultat (/ summa divisor)]
+    [:div
+     [:h4 "Division"]
+     [:div {:style {:font-weight "bold"
+                    :width "33%"
+                    :text-align "center"
+                    :display "flex"
+                    :align-items "center"
+                    :justify-content "space-around"}}
+      [:div {:style {:width "3rem"}}
+       [:div {:style {:border-bottom "solid"}} summa] 
+       [:div divisor]]
+      [:div {:style {:font-weight "bold"}} "="]
+      [:div {:style {}} [:input {:type :text
+                                 :size 2
+                                 :value (if (:visa-svar @app-state)
+                                          resultat
+                                          "")}]]]]))
 
 (defn hello-world []
   (let [state @app-state]
     [:div
      [:h1 (:text state)]
-     [:h3 "Detta är multiplikationstabellen"]
-     [:div
+     [:h3 "Här kan du öva"]
+     [:div 
       [:input {:type "checkbox" :id "visa"
                :checked (:visa-svar state)
                :on-change #(swap! app-state update :visa-svar not)}]
       [:label {:for "visa"}] "Visa svaren"]
-     [multiplikationstabell app-state]]))
+     [multiplikationstabell app-state]
+     [:hr]
+     [division app-state]]))
 
 (reagent/render-component [hello-world]
                           (. js/document (getElementById "app")))
