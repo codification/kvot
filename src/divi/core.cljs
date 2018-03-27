@@ -1,5 +1,6 @@
 (ns divi.core
-    (:require [reagent.core :as reagent :refer [atom]]))
+  (:require [reagent.core :as reagent :refer [atom]]
+            [clojure.string :refer [trim]]))
 
 (enable-console-print!)
 
@@ -11,12 +12,22 @@
                           :visa-svar false
                           :data {}}))
 
-(defn mata-in [[c r]]
+(def first-number (partial re-find #"[0-9]{1,2}"))
+
+(defn mata-in [app-state [c r]]
   (fn [e]
+    (.preventDefault e)
+    (.stopPropagation e)
     (when-not (:visa-svar @app-state)
       (let [nytt-värde (-> e
                            .-target
-                           .-value)]
+                           .-value
+                           trim
+                           first-number)]
+        (.log js/console "fick: " (-> e
+                                      .-target
+                                      .-value))
+        (.log js/console "Nytt värde" (pr-str [c r]) ":" nytt-värde)
         (swap! app-state 
                assoc-in
                [:data c r]
@@ -29,28 +40,29 @@
     (get-in state
             [:data c r] "")))
 
-(defn multiplikationstabell [state]
-  [:table
-   [:tbody
-    (concat (map (fn [r]
-                   [:tr {:key (str "*" r)}
-                    (cons
-                     [:td.column {:key (str r)}
-                      r]
-                     (map (fn [c]
-                            [:td.cell {:key (str c "*" r)}
-                             [:input {:type :text
-                                      :size "2"
-                                      :on-input (mata-in [c r])
-                                      :value (cell-value-for state [c r])}]])
-                          (range 1 11)))])
-                 (range 10 0 -1))
-            [[:tr {:key "*0"}
-              (cons
-               [:td.origo {:key "origo"} 0]
-               (map (fn [c]
-                      [:td.bottom-row {:key (str c "*")} c])
-                    (range 1 11)))] ])]])
+(defn multiplikationstabell [app-state]
+  (let [state @app-state]
+    [:table
+     [:tbody
+      (concat (map (fn [r]
+                     [:tr {:key (str "*" r)}
+                      (cons
+                       [:td.column {:key (str r)}
+                        r]
+                       (map (fn [c]
+                              [:td.cell {:key (str c "*" r)}
+                               [:input {:type :text
+                                        :size "2"
+                                        :on-change (mata-in app-state [c r])
+                                        :value (cell-value-for state [c r])}]])
+                            (range 1 11)))])
+                   (range 10 0 -1))
+              [[:tr {:key "*0"}
+                (cons
+                 [:td.origo {:key "origo"} 0]
+                 (map (fn [c]
+                        [:td.bottom-row {:key (str c "*")} c])
+                      (range 1 11)))] ])]]))
 
 (defn hello-world []
   (let [state @app-state]
@@ -62,7 +74,7 @@
                :checked (:visa-svar state)
                :on-change #(swap! app-state update :visa-svar not)}]
       [:label {:for "visa"}] "Visa svaren"]
-     [multiplikationstabell state]]))
+     [multiplikationstabell app-state]]))
 
 (reagent/render-component [hello-world]
                           (. js/document (getElementById "app")))
