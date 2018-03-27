@@ -8,27 +8,30 @@
 
 (println "This text is printed from src/divi/core.cljs. Go ahead and edit it and see reloading in action.")
 
-(def first-number (partial re-find #"[0-9]{1,2}"))
+(def heltal (partial re-find #"[0-9]{1,2}"))
+(def decimaltal (partial re-find #"[0-9,]+"))
 
-(defn mata-in [app-state [c r]]
+(defn handler-fn [f]
   (fn [e]
     (.preventDefault e)
     (.stopPropagation e)
-    (when-not (:visa-svar @app-state)
-      (let [nytt-värde (-> e
-                           .-target
-                           .-value
-                           trim
-                           first-number)]
-        (.log js/console "fick: " (-> e
-                                      .-target
-                                      .-value))
-        (.log js/console "Nytt värde" (pr-str [c r]) ":" nytt-värde)
-        (swap! app-state 
-               assoc-in
-               [:data c r]
-               nytt-värde)))
+    (let [v (-> e
+                .-target
+                .-value)]
+      (f v))
     nil))
+
+(defn mata-in [app-state [c r]]
+  (handler-fn
+   (fn [v]
+     (when-not (:visa-svar @app-state)
+       (let [nytt-värde (-> v
+                            trim
+                            heltal)]
+         (swap! app-state 
+                assoc-in
+                [:data c r]
+                nytt-värde))))))
 
 (defn cell-value-for [state [c r]]
   (if (:visa-svar state)
@@ -93,10 +96,17 @@
        [:div nämnare]]
       [:div {:style {:font-weight "bold"}} "="]
       [:div {:style {}} [:input {:type :text
-                                 :size 2
+                                 :size 4
+                                 :on-change (handler-fn
+                                             (fn [v]
+                                               (let [svar (-> v
+                                                              trim
+                                                              decimaltal)]
+                                                 (swap! app-state assoc-in
+                                                        [:division :svar] svar))))
                                  :value (if (:visa-svar @app-state)
                                           kvot
-                                          "")}]]]
+                                          (get-in @app-state [:division :svar] ""))}]]]
      [:button {:on-click #(swap! app-state assoc-in [:division :tal] (nytt-tal))}
       "(Nytt tal)"]]))
 
@@ -127,4 +137,4 @@
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
-)
+  )
