@@ -1,2 +1,24 @@
 /* some style */
 
+table {
+    font-family: monospace;
+    
+}
+
+.cell {
+    width: 2rem;
+    border: solid;
+    border-width: 1px;
+}
+
+.cell input {
+    padding: 0px;
+    height: 17px;
+    width: 100%;
+}
+
+.column, .bottom-row, .origo {
+    color: red;
+    text-align: center;
+    font-weight: bold;
+}
