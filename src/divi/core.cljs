@@ -1,16 +1,12 @@
 (ns divi.core
   (:require [reagent.core :as reagent :refer [atom]]
-            [clojure.string :refer [trim]]))
+            [clojure.string :refer [trim]]
+            [goog.string :as gstring]
+            [goog.string.format]))
 
 (enable-console-print!)
 
 (println "This text is printed from src/divi/core.cljs. Go ahead and edit it and see reloading in action.")
-
-;; define your app data so that it doesn't get over-written on reload
-
-(defonce app-state (atom {:text "Hej Nora"
-                          :visa-svar false
-                          :data {}}))
 
 (def first-number (partial re-find #"[0-9]{1,2}"))
 
@@ -66,12 +62,26 @@
                          [:td.bottom-row {:key (str c "*")} c])
                        (range 1 11)))] ])]]]))
 
+
+(defn ny-kvot []
+  (/ (+ (rand-int 800) 100) 10))
+
+(defn ny-nämnare []
+  (inc (rand-int 9)))
+
+(defn nytt-tal []
+  (let [kvot (ny-kvot)
+        nämnare (ny-nämnare)]
+    {:kvot kvot
+     :nämnare nämnare
+     :täljare (* kvot nämnare)}))
+
 (defn division [app-state]
-  (let [summa 123.3
-        divisor 3
-        resultat (/ summa divisor)]
+  (let [{:keys [kvot nämnare täljare]} (-> @app-state
+                                           :division
+                                           :tal)]
     [:div
-     [:h4 "Division"]
+     [:h4 "Division"] 
      [:div {:style {:font-weight "bold"
                     :width "33%"
                     :text-align "center"
@@ -79,15 +89,23 @@
                     :align-items "center"
                     :justify-content "space-around"}}
       [:div {:style {:width "3rem"}}
-       [:div {:style {:border-bottom "solid"}} summa] 
-       [:div divisor]]
+       [:div {:style {:border-bottom "solid"}} täljare] 
+       [:div nämnare]]
       [:div {:style {:font-weight "bold"}} "="]
       [:div {:style {}} [:input {:type :text
                                  :size 2
                                  :value (if (:visa-svar @app-state)
-                                          resultat
-                                          "")}]]]]))
+                                          kvot
+                                          "")}]]]
+     [:button {:on-click #(swap! app-state assoc-in [:division :tal] (nytt-tal))}
+      "(Nytt tal)"]]))
 
+;; define your app data so that it doesn't get over-written on reload
+
+(defonce app-state (atom {:text "Hej Nora"
+                          :visa-svar false
+                          :data {}
+                          :division {:tal (nytt-tal)}}))
 (defn hello-world []
   (let [state @app-state]
     [:div
